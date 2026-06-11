@@ -24,6 +24,7 @@ type ApiResponse = {
   mppt: MpptPacket | null
   spare: MpptPacket | null
   vehicleAgeMs: number | null
+  mpptAgeMs: number | null
   fetchedAt: number
   error?: string
 }
@@ -46,6 +47,7 @@ export function Dashboard() {
   const [mppt, setMppt]       = useState<MpptPacket | null>(null)
   const [spare, setSpare]     = useState<MpptPacket | null>(null)
   const [vehicleAgeMs, setVehicleAgeMs] = useState<number | null>(null)
+  const [mpptAgeMs, setMpptAgeMs]       = useState<number | null>(null)
   const [lastUpdated, setLastUpdated]   = useState<number | null>(null)
   const [status, setStatus]   = useState<ConnectionStatus>('connecting')
   const [selectedDay, setSelectedDay]   = useState(1)
@@ -62,6 +64,7 @@ export function Dashboard() {
       setMppt(data.mppt)
       setSpare(data.spare)
       setVehicleAgeMs(data.vehicleAgeMs)
+      setMpptAgeMs(data.mpptAgeMs)
       setLastUpdated(data.fetchedAt)
       const age = data.vehicleAgeMs ?? Infinity
       setStatus(age < STALE_THRESHOLD_MS ? 'live' : age < 60000 ? 'stale' : 'offline')
@@ -243,6 +246,8 @@ export function Dashboard() {
             liveWhPerMile={livWpm}
             modelWhPerMileAtCurrentSpeed={modelWpm}
             netWhPerMile={netWpm}
+            vehicleAgeMs={vehicleAgeMs}
+            mpptAgeMs={mpptAgeMs}
           />
         </div>
       </div>

@@ -3,15 +3,40 @@
 import type { VehiclePacket, MpptPacket } from '@/types/telemetry'
 import { motorRpm, aeroPowerW, rollingPowerW } from '@/lib/physics'
 
+const DISCONNECTED_MS = 30_000
+
+function NodeStatus({ ageMs }: { ageMs: number | null }) {
+  if (ageMs === null) {
+    return <span className="text-[9px] font-semibold text-slate-600 uppercase tracking-wider">No data</span>
+  }
+  const secs = Math.round(ageMs / 1000)
+  if (ageMs < DISCONNECTED_MS) {
+    return (
+      <span className="flex items-center gap-1">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="text-[9px] font-semibold text-emerald-400">{secs}s ago</span>
+      </span>
+    )
+  }
+  return (
+    <span className="flex items-center gap-1">
+      <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+      <span className="text-[9px] font-semibold text-red-400">Disconnected · {secs}s</span>
+    </span>
+  )
+}
+
 type Props = {
   vehicle: VehiclePacket | null
   mppt: MpptPacket | null
   liveWhPerMile: number | null
   modelWhPerMileAtCurrentSpeed: number
   netWhPerMile: number
+  vehicleAgeMs?: number | null
+  mpptAgeMs?: number | null
 }
 
-export function TelemetryGrid({ vehicle, mppt, liveWhPerMile, modelWhPerMileAtCurrentSpeed, netWhPerMile }: Props) {
+export function TelemetryGrid({ vehicle, mppt, liveWhPerMile, modelWhPerMileAtCurrentSpeed, netWhPerMile, vehicleAgeMs, mpptAgeMs }: Props) {
   const speed = vehicle?.speedMph ?? 0
   const expectedRpm = speed > 0 ? motorRpm(speed) : null
   const aeroW = speed > 0 ? aeroPowerW(speed) : null
@@ -33,7 +58,7 @@ export function TelemetryGrid({ vehicle, mppt, liveWhPerMile, modelWhPerMileAtCu
       </Section>
 
       {/* 2. Vehicle */}
-      <Section title="Vehicle">
+      <Section title="Vehicle" status={<NodeStatus ageMs={vehicleAgeMs ?? null} />}>
         <Row label="Speed"       value={fmt(vehicle?.speedMph, 1)} unit="mph" />
         <Row label="Pack SoC"    value={fmt(vehicle?.packSoc, 0)} unit="%" />
         <Row label="Pack V"      value={fmt(vehicle?.packVoltage, 1)} unit="V" />
@@ -51,7 +76,7 @@ export function TelemetryGrid({ vehicle, mppt, liveWhPerMile, modelWhPerMileAtCu
       </Section>
 
       {/* 3. MPPT / Solar */}
-      <Section title="Solar / MPPT">
+      <Section title="Solar / MPPT" status={<NodeStatus ageMs={mpptAgeMs ?? null} />}>
         <Row label="PV power"    value={fmt(mppt?.mpptPvPowerWatts, 0)} unit="W"
           highlight={(mppt?.mpptPvPowerWatts ?? 0) > 1400 ? 'good' : (mppt?.mpptPvPowerWatts ?? 0) > 0 && (mppt?.mpptPvPowerWatts ?? 0) < 800 ? 'warn' : undefined} />
         <Row label="PV voltage"  value={fmt(mppt?.mpptPvVoltage, 1)} unit="V" />
@@ -82,11 +107,12 @@ function fmt(value: number | string | null | undefined, decimals?: number): stri
   return decimals !== undefined ? value.toFixed(decimals) : String(value)
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, status }: { title: string; children: React.ReactNode; status?: React.ReactNode }) {
   return (
     <div className="rounded border border-white/10 bg-white/[0.04] overflow-hidden">
-      <div className="border-b border-white/10 bg-white/[0.03] px-2.5 py-1">
+      <div className="border-b border-white/10 bg-white/[0.03] px-2.5 py-1 flex items-center justify-between gap-2">
         <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{title}</p>
+        {status}
       </div>
       <div className="grid grid-cols-3 divide-x divide-y divide-white/[0.05]">{children}</div>
     </div>
