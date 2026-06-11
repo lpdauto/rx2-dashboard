@@ -68,11 +68,11 @@ export function TelemetryGrid({ vehicle, mppt, liveWhPerMile, modelWhPerMileAtCu
           sub={expectedRpm ? `mdl ${Math.round(expectedRpm)}` : undefined} />
         <Row label="Throttle"    value={fmt(vehicle?.throttlePercent, 0)} unit="%" />
         <Row label="Regen"       value={fmt(vehicle?.regenWatts, 0)} unit="W" />
-        <Row label="Motor °C"    value={fmt(vehicle?.motorTempC, 0)} unit="°C"
+        <Row label="Motor temp"  value={cToF(vehicle?.motorTempC)} unit="°F"
           warn={(vehicle?.motorTempC ?? 0) > 85} crit={(vehicle?.motorTempC ?? 0) > 95} />
-        <Row label="Ctrl °C"     value={fmt(vehicle?.controllerTempC, 0)} unit="°C"
+        <Row label="Ctrl temp"   value={cToF(vehicle?.controllerTempC)} unit="°F"
           warn={(vehicle?.controllerTempC ?? 0) > 75} crit={(vehicle?.controllerTempC ?? 0) > 85} />
-        <Row label="Pack °C"     value={fmt(vehicle?.packTempC, 0)} unit="°C" />
+        <Row label="Pack temp"   value={cToF(vehicle?.packTempC)} unit="°F" />
       </Section>
 
       {/* 3. GPS — always shown, critical for position/navigation */}
@@ -108,6 +108,11 @@ export function TelemetryGrid({ vehicle, mppt, liveWhPerMile, modelWhPerMileAtCu
 
     </div>
   )
+}
+
+function cToF(c: number | null | undefined): string | null {
+  if (c == null || !Number.isFinite(c)) return null
+  return ((c * 9 / 5) + 32).toFixed(0)
 }
 
 function fmt(value: number | string | null | undefined, decimals?: number): string | null {
