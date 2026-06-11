@@ -14,8 +14,12 @@ async function expectedToken(): Promise<string> {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Always allow login page and auth API through
-  if (pathname.startsWith('/login') || pathname.startsWith('/api/auth')) {
+  // Always allow login page, auth API, and telemetry ingest (ESP32 uses bearer token, not cookie)
+  if (
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/api/telemetry/ingest')
+  ) {
     return NextResponse.next()
   }
 
