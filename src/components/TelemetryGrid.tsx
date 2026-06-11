@@ -75,7 +75,25 @@ export function TelemetryGrid({ vehicle, mppt, liveWhPerMile, modelWhPerMileAtCu
         <Row label="Pack °C"     value={fmt(vehicle?.packTempC, 0)} unit="°C" />
       </Section>
 
-      {/* 3. MPPT / Solar */}
+      {/* 3. GPS — always shown, critical for position/navigation */}
+      <Section title="GPS" status={
+        vehicle?.gpsLat && vehicle?.gpsLng
+          ? <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /><span className="text-[9px] font-semibold text-emerald-400">Fix</span></span>
+          : <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /><span className="text-[9px] font-semibold text-red-400">No fix</span></span>
+      }>
+        <Row label="Latitude"   value={fmt(vehicle?.gpsLat, 5)} />
+        <Row label="Longitude"  value={fmt(vehicle?.gpsLng, 5)} />
+        <Row label="Elevation"  value={fmt(vehicle?.gpsElevationFt, 0)} unit="ft" />
+        <Row label="GPS speed"  value={fmt(vehicle?.gpsSpeedMph, 1)}    unit="mph" />
+        <Row label="Heading"    value={fmt(vehicle?.gpsHeadingDeg, 0)}  unit="°" />
+        <Row label="Accuracy"   value={fmt(vehicle?.gpsAccuracyM, 1)}   unit="m"
+          highlight={(vehicle?.gpsAccuracyM ?? 0) > 10 ? 'warn' : vehicle?.gpsAccuracyM != null ? 'good' : undefined} />
+        <Row label="Satellites" value={fmt(vehicle?.gpsSatellites, 0)}
+          highlight={(vehicle?.gpsSatellites ?? 0) < 4 && vehicle?.gpsSatellites != null ? 'warn' : undefined} />
+        <Row label="Fix type"   value={vehicle?.gpsFixType ?? null} />
+      </Section>
+
+      {/* 4. MPPT / Solar */}
       <Section title="Solar / MPPT" status={<NodeStatus ageMs={mpptAgeMs ?? null} />}>
         <Row label="PV power"    value={fmt(mppt?.mpptPvPowerWatts, 0)} unit="W"
           highlight={(mppt?.mpptPvPowerWatts ?? 0) > 1400 ? 'good' : (mppt?.mpptPvPowerWatts ?? 0) > 0 && (mppt?.mpptPvPowerWatts ?? 0) < 800 ? 'warn' : undefined} />
@@ -88,14 +106,6 @@ export function TelemetryGrid({ vehicle, mppt, liveWhPerMile, modelWhPerMileAtCu
         {mppt?.mpptFault && <Row label="Fault" value={mppt.mpptFault} highlight="crit" />}
       </Section>
 
-      {/* GPS — only if available */}
-      {(vehicle?.gpsLat || vehicle?.gpsLng) && (
-        <Section title="GPS">
-          <Row label="Lat"  value={fmt(vehicle?.gpsLat, 4)} />
-          <Row label="Lng"  value={fmt(vehicle?.gpsLng, 4)} />
-          <Row label="Elev" value={fmt(vehicle?.gpsElevationFt, 0)} unit="ft" />
-        </Section>
-      )}
     </div>
   )
 }

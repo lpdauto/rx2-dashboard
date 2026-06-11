@@ -6,6 +6,11 @@ export type VehiclePacket = {
   gpsLat?: number
   gpsLng?: number
   gpsElevationFt?: number
+  gpsSpeedMph?: number
+  gpsHeadingDeg?: number
+  gpsAccuracyM?: number
+  gpsSatellites?: number
+  gpsFixType?: string   // e.g. 'none' | '2D' | '3D'
   packVoltage?: number
   packCurrent?: number
   packSoc?: number
