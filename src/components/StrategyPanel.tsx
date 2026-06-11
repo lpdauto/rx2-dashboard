@@ -3,101 +3,94 @@
 import type { StrategyResult } from '@/lib/strategy'
 
 const modeStyle: Record<string, { bg: string; text: string; border: string }> = {
-  Conserve: { bg: 'bg-red-500/10',    text: 'text-red-400',    border: 'border-red-500/30' },
+  Conserve: { bg: 'bg-red-500/10',     text: 'text-red-400',     border: 'border-red-500/30' },
   Normal:   { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
-  Attack:   { bg: 'bg-amber-500/10',  text: 'text-amber-400',  border: 'border-amber-500/30' },
-  Endgame:  { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
+  Attack:   { bg: 'bg-amber-500/10',   text: 'text-amber-400',   border: 'border-amber-500/30' },
+  Endgame:  { bg: 'bg-purple-500/10',  text: 'text-purple-400',  border: 'border-purple-500/30' },
 }
 
-type Props = {
-  strategy: StrategyResult
-}
-
-export function StrategyPanel({ strategy: s }: Props) {
+export function StrategyPanel({ strategy: s }: { strategy: StrategyResult }) {
   const mode = modeStyle[s.raceMode] ?? modeStyle.Normal
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Alerts */}
+    <div className="flex flex-col gap-2">
+      {/* Alerts — compact single line each */}
       {s.alerts.length > 0 && (
         <div className="flex flex-col gap-1">
           {s.alerts.map((alert, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-300"
-            >
-              <span className="text-red-400">▲</span>
-              {alert}
+            <div key={i} className="flex items-center gap-1.5 rounded border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-300">
+              <span className="text-red-400 text-[10px]">▲</span>{alert}
             </div>
           ))}
         </div>
       )}
 
-      {/* Recommended speed — big card */}
-      <div className={`rounded-xl border ${mode.border} ${mode.bg} p-5`}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Recommended Speed</p>
-            <p className={`mt-1 text-7xl font-black leading-none ${mode.text}`}>
-              {s.recommendedSpeedMph}
-            </p>
-            <p className="mt-1 text-base font-medium text-slate-400">mph</p>
+      {/* Speed + instructions: horizontal on wide screens */}
+      <div className={`rounded-xl border ${mode.border} ${mode.bg} p-3`}>
+        <div className="flex items-start gap-3">
+          {/* Speed number */}
+          <div className="flex-none">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 leading-none">Rec. Speed</p>
+            <p className={`text-5xl font-black leading-none mt-0.5 ${mode.text}`}>{s.recommendedSpeedMph}</p>
+            <p className="text-xs font-medium text-slate-400 mt-0.5">mph</p>
           </div>
-          <div className="text-right">
-            <span className={`inline-block rounded border ${mode.border} ${mode.bg} px-3 py-1 text-sm font-bold uppercase tracking-wide ${mode.text}`}>
-              {s.raceMode}
-            </span>
-            <p className="mt-3 text-xs text-slate-400">Break-even</p>
-            <p className="text-sm font-bold text-white">{s.currentBreakEvenMph} mph</p>
+
+          {/* Divider */}
+          <div className="w-px self-stretch bg-white/10 flex-none" />
+
+          {/* Mode + instructions */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className={`inline-block rounded border ${mode.border} px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${mode.text}`}>
+                {s.raceMode}
+              </span>
+              <span className="text-[10px] text-slate-500">Break-even {s.currentBreakEvenMph} mph</span>
+            </div>
+            <p className="text-xs text-slate-200 leading-snug">
+              <span className="font-bold text-white">Driver:</span> {s.driverInstruction}
+            </p>
+            <p className="text-xs text-slate-200 leading-snug mt-1">
+              <span className="font-bold text-white">Chase:</span> {s.chaseInstruction}
+            </p>
           </div>
         </div>
-
-        <p className="mt-4 rounded-md bg-black/20 px-3 py-2 text-sm text-slate-200 leading-6">
-          <span className="font-bold text-white">Driver:</span> {s.driverInstruction}
-        </p>
-        <p className="mt-2 rounded-md bg-black/20 px-3 py-2 text-sm text-slate-200 leading-6">
-          <span className="font-bold text-white">Chase:</span> {s.chaseInstruction}
-        </p>
       </div>
 
-      {/* Projections grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* Projections row */}
+      <div className="grid grid-cols-4 gap-2">
         <Stat
-          label="Proj. finish SoC"
+          label="Fin. SoC"
           value={`${Math.round(s.projectedFinishSocPercent)}%`}
           color={s.projectedFinishSocPercent < 15 ? 'text-red-400' : s.projectedFinishSocPercent < 30 ? 'text-orange-400' : 'text-emerald-400'}
         />
+        <Stat label="Finish" value={s.estimatedFinishTime ? `${s.estimatedFinishTime}` : '—'} sub="CDT" />
         <Stat
-          label="Est. finish time"
-          value={s.estimatedFinishTime ? `${s.estimatedFinishTime} CDT` : '—'}
-        />
-        <Stat
-          label="Time buffer"
+          label="Buffer"
           value={s.timeBufferHours !== null ? `${s.timeBufferHours >= 0 ? '+' : ''}${s.timeBufferHours.toFixed(1)}h` : '—'}
           color={s.timeBufferHours !== null && s.timeBufferHours < 0 ? 'text-red-400' : s.timeBufferHours !== null && s.timeBufferHours > 2 ? 'text-emerald-400' : 'text-white'}
         />
         <Stat
-          label="Range on pack"
-          value={s.projectedMilesOnPack === Infinity ? '∞' : `${Math.round(s.projectedMilesOnPack)} mi`}
+          label="Range"
+          value={s.projectedMilesOnPack === Infinity ? '∞ mi' : `${Math.round(s.projectedMilesOnPack)} mi`}
         />
       </div>
 
-      {/* Swap advice */}
+      {/* Swap alert */}
       {s.swapRecommended && (
-        <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3">
-          <p className="text-sm font-bold text-amber-300">Battery Swap Recommended</p>
-          <p className="text-xs text-slate-300 mt-0.5">{s.swapReason}</p>
+        <div className="rounded border border-amber-400/40 bg-amber-400/10 px-2.5 py-1.5 text-xs font-bold text-amber-300">
+          ⚡ Swap recommended — {s.swapReason}
         </div>
       )}
     </div>
   )
 }
 
-function Stat({ label, value, color = 'text-white' }: { label: string; value: string; color?: string }) {
+function Stat({ label, value, sub, color = 'text-white' }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
-      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{label}</p>
-      <p className={`mt-1 text-xl font-bold ${color}`}>{value}</p>
+    <div className="rounded border border-white/10 bg-white/[0.04] px-2 py-1.5">
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-500 leading-none">{label}</p>
+      <p className={`mt-0.5 text-base font-bold leading-none ${color}`}>{value}</p>
+      {sub && <p className="text-[9px] text-slate-600 leading-none mt-0.5">{sub}</p>}
     </div>
   )
 }

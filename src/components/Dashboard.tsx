@@ -9,8 +9,7 @@ import {
   netWhPerMile,
   SOLAR_ROLLING_W,
 } from '@/lib/physics'
-import { hoursRemainingInRace, getRaceDay } from '@/data/race'
-import { StatusBar } from '@/components/StatusBar'
+import { hoursRemainingInRace, getRaceDay, isRaceWindow, RACE_DAYS } from '@/data/race'
 import { SocGauge } from '@/components/SocGauge'
 import { MetricCard } from '@/components/MetricCard'
 import { StrategyPanel } from '@/components/StrategyPanel'
@@ -25,137 +24,153 @@ type ApiResponse = {
   mppt: MpptPacket | null
   spare: MpptPacket | null
   vehicleAgeMs: number | null
-  mpptAgeMs: number | null
   fetchedAt: number
   error?: string
 }
 
+const statusDot: Record<ConnectionStatus, string> = {
+  connecting: 'bg-yellow-400 animate-pulse',
+  live:       'bg-emerald-400 animate-pulse',
+  stale:      'bg-orange-400',
+  offline:    'bg-red-500',
+}
+const statusLabel: Record<ConnectionStatus, string> = {
+  connecting: 'Connecting',
+  live:       'Live',
+  stale:      'Stale',
+  offline:    'Offline',
+}
+
 export function Dashboard() {
   const [vehicle, setVehicle] = useState<VehiclePacket | null>(null)
-  const [mppt, setMppt] = useState<MpptPacket | null>(null)
-  const [spare, setSpare] = useState<MpptPacket | null>(null)
+  const [mppt, setMppt]       = useState<MpptPacket | null>(null)
+  const [spare, setSpare]     = useState<MpptPacket | null>(null)
   const [vehicleAgeMs, setVehicleAgeMs] = useState<number | null>(null)
-  const [lastUpdated, setLastUpdated] = useState<number | null>(null)
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting')
-  const [selectedDay, setSelectedDay] = useState(1)
+  const [lastUpdated, setLastUpdated]   = useState<number | null>(null)
+  const [status, setStatus]   = useState<ConnectionStatus>('connecting')
+  const [selectedDay, setSelectedDay]   = useState(1)
   const [milesCompleted, setMilesCompleted] = useState(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const poll = useCallback(async () => {
     try {
-      const res = await fetch('/api/telemetry', { cache: 'no-store' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const res  = await fetch('/api/telemetry', { cache: 'no-store' })
+      if (!res.ok) throw new Error()
       const data: ApiResponse = await res.json()
-
-      if (data.error) {
-        setConnectionStatus('offline')
-        return
-      }
-
+      if (data.error) { setStatus('offline'); return }
       setVehicle(data.vehicle)
       setMppt(data.mppt)
       setSpare(data.spare)
       setVehicleAgeMs(data.vehicleAgeMs)
       setLastUpdated(data.fetchedAt)
-
       const age = data.vehicleAgeMs ?? Infinity
-      setConnectionStatus(
-        age < STALE_THRESHOLD_MS ? 'live'
-        : age < 60000 ? 'stale'
-        : 'offline'
-      )
-    } catch {
-      setConnectionStatus('offline')
-    }
+      setStatus(age < STALE_THRESHOLD_MS ? 'live' : age < 60000 ? 'stale' : 'offline')
+    } catch { setStatus('offline') }
   }, [])
 
   useEffect(() => {
     poll()
-    intervalRef.current = setInterval(poll, POLL_INTERVAL_MS)
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
+    timerRef.current = setInterval(poll, POLL_INTERVAL_MS)
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
   }, [poll])
 
-  // Track miles completed from odometer or distance
   useEffect(() => {
-    const miles = vehicle?.odometerMiles ?? vehicle?.distanceMiles ?? 0
-    if (miles > 0) setMilesCompleted(miles)
+    const m = vehicle?.odometerMiles ?? vehicle?.distanceMiles ?? 0
+    if (m > 0) setMilesCompleted(m)
   }, [vehicle])
 
   // Derived values
-  const speed = vehicle?.speedMph ?? 0
-  const packSoc = vehicle?.packSoc ?? 0
-  const packVoltage = vehicle?.packVoltage ?? 0
-  const packCurrent = vehicle?.packCurrent ?? 0
-  const batteryPowerW = packVoltage * packCurrent
-  const solarW = mppt?.mpptPvPowerWatts ?? mppt?.mpptChargePowerWatts ?? 0
-  const spareSoc = spare?.spareSocPercent ?? mppt?.spareSocPercent ?? null
-  const motorTemp = vehicle?.motorTempC
-  const controllerTemp = vehicle?.controllerTempC
+  const speed      = vehicle?.speedMph ?? 0
+  const packSoc    = vehicle?.packSoc ?? 0
+  const packV      = vehicle?.packVoltage ?? 0
+  const packA      = vehicle?.packCurrent ?? 0
+  const battW      = packV * packA
+  const solarW     = mppt?.mpptPvPowerWatts ?? mppt?.mpptChargePowerWatts ?? 0
+  const spareSoc   = spare?.spareSocPercent ?? (mppt as any)?.spareSocPercent ?? null
 
-  const raceDay = getRaceDay(selectedDay)
-  const totalMiles = raceDay?.miles ?? 153.6
-  const milesRemaining = Math.max(0, totalMiles - milesCompleted)
-  const hoursLeft = hoursRemainingInRace()
+  const raceDay      = getRaceDay(selectedDay)
+  const totalMiles   = raceDay?.miles ?? 153.6
+  const milesLeft    = Math.max(0, totalMiles - milesCompleted)
+  const hoursLeft    = hoursRemainingInRace()
+  const raceActive   = isRaceWindow()
 
-  const livWpm = calcLiveWhPerMile(batteryPowerW, speed)
+  const livWpm   = calcLiveWhPerMile(battW, speed)
   const modelWpm = modelWhPerMile(speed)
-  const netWpm = netWhPerMile(speed, solarW > 10 ? solarW : SOLAR_ROLLING_W)
+  const netWpm   = netWhPerMile(speed, solarW > 10 ? solarW : SOLAR_ROLLING_W)
 
   const strategy = computeStrategy({
     driveSocPercent: packSoc,
     spareSocPercent: spareSoc,
     speedMph: speed,
     solarPowerW: solarW,
-    milesRemaining,
+    milesRemaining: milesLeft,
     milesCompleted,
-    motorTempC: motorTemp,
-    controllerTempC: controllerTemp,
+    motorTempC: vehicle?.motorTempC,
+    controllerTempC: vehicle?.controllerTempC,
     hoursRemainingInWindow: hoursLeft,
     isFinalDay: selectedDay === 5,
   })
 
+  const hoursH = Math.floor(hoursLeft)
+  const hoursM = Math.floor((hoursLeft - hoursH) * 60)
+
   return (
-    <div className="flex min-h-screen flex-col gap-4 bg-[#050505] p-4 text-slate-100 sm:p-5">
-      {/* Header */}
-      <header className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-400">RX2 · 2026 Solar Race</p>
-          <h1 className="text-2xl font-black text-white sm:text-3xl">Race Dashboard</h1>
-        </div>
-        <div className="text-right text-xs text-slate-500">
-          <p>Fort Worth → Fort Stockton</p>
-          <p>July 19–23, 2026</p>
-        </div>
-      </header>
+    // Full-height flex column on desktop; natural scroll on mobile
+    <div className="flex flex-col bg-[#050505] text-slate-100 xl:h-screen xl:overflow-hidden">
 
-      {/* Status bar */}
-      <StatusBar
-        connectionStatus={connectionStatus}
-        vehicleAgeMs={vehicleAgeMs}
-        lastUpdated={lastUpdated}
-        selectedDay={selectedDay}
-        onDayChange={setSelectedDay}
-      />
+      {/* ── Top bar: header + status + day picker ─────────────────── */}
+      <div className="flex-none flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-white/10 px-3 py-2">
+        {/* Brand */}
+        <div className="flex items-center gap-2 mr-auto">
+          <span className="text-xs font-black uppercase tracking-widest text-amber-400">RX2</span>
+          <span className="text-xs font-semibold text-slate-400">Race Dashboard</span>
+        </div>
 
-      {/* Top metrics row */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Day tabs */}
+        <div className="flex items-center gap-1">
+          {RACE_DAYS.map((d) => (
+            <button
+              key={d.day}
+              onClick={() => setSelectedDay(d.day)}
+              className={`rounded px-2.5 py-1 text-xs font-bold transition min-w-[2.5rem] ${
+                selectedDay === d.day
+                  ? 'bg-amber-400 text-black'
+                  : 'border border-white/10 text-slate-400 hover:text-white'
+              }`}
+            >
+              D{d.day}
+            </button>
+          ))}
+        </div>
+
+        {/* Status + race window */}
+        <div className="flex items-center gap-3 text-xs">
+          <span className="flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full ${statusDot[status]}`} />
+            <span className="text-slate-300">{statusLabel[status]}</span>
+            {lastUpdated && <span className="text-slate-600">{new Date(lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>}
+          </span>
+          <span className={`rounded px-1.5 py-0.5 font-bold ${raceActive ? 'bg-emerald-900/50 text-emerald-300' : 'bg-slate-800 text-slate-500'}`}>
+            {raceActive ? `${hoursH}h ${hoursM}m left` : 'Race off'}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Metrics strip ─────────────────────────────────────────── */}
+      <div className="flex-none grid grid-cols-2 gap-1.5 px-3 pt-2 sm:grid-cols-4">
         <MetricCard
           label="Speed"
           value={speed > 0 ? speed.toFixed(1) : '—'}
           unit="mph"
           sub={`target ${strategy.recommendedSpeedMph} mph`}
           color={speed > 0 && Math.abs(speed - strategy.recommendedSpeedMph) > 5 ? 'orange' : 'default'}
-          large
         />
         <MetricCard
-          label="Solar power"
+          label="Solar"
           value={solarW > 0 ? Math.round(solarW) : '—'}
           unit="W"
-          sub={`break-even ${strategy.currentBreakEvenMph} mph`}
-          color={solarW > 1400 ? 'green' : solarW > 800 ? 'yellow' : 'orange'}
-          large
+          sub={`b/e ${strategy.currentBreakEvenMph} mph`}
+          color={solarW > 1400 ? 'green' : solarW > 800 ? 'yellow' : solarW > 0 ? 'orange' : 'default'}
         />
         <MetricCard
           label="Live Wh/mi"
@@ -163,44 +178,43 @@ export function Dashboard() {
           unit="Wh/mi"
           sub={`model ${modelWpm.toFixed(1)}`}
           color={livWpm !== null && livWpm > modelWpm * 1.15 ? 'orange' : 'default'}
-          large
         />
         <MetricCard
           label="Net Wh/mi"
-          value={netWpm.toFixed(1)}
+          value={Number.isFinite(netWpm) ? netWpm.toFixed(1) : '—'}
           unit="Wh/mi"
           sub={netWpm < 0 ? '↑ charging' : '↓ draining'}
           color={netWpm < 0 ? 'green' : netWpm < 10 ? 'yellow' : netWpm < 20 ? 'orange' : 'red'}
-          large
         />
       </div>
 
-      {/* Main content: strategy + SoC left, telemetry right */}
-      <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
+      {/* ── Main area ─────────────────────────────────────────────── */}
+      {/* On desktop: two columns, each independently scrollable     */}
+      {/* On mobile: single column, natural flow                     */}
+      <div className="flex-1 grid gap-2 px-3 pb-3 pt-2 overflow-hidden xl:grid-cols-[1fr_300px]">
+
         {/* Left column */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2 overflow-y-auto xl:overflow-hidden xl:grid xl:grid-rows-[auto_auto_1fr] xl:gap-2">
+
+          {/* Strategy */}
           <StrategyPanel strategy={strategy} />
 
-          {/* SoC gauges */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {/* SoC row + progress */}
+          <div className={`grid gap-2 ${spareSoc !== null ? 'grid-cols-3' : 'grid-cols-2'}`}>
             <SocGauge
               socPercent={packSoc}
               label="Drive Pack"
-              sub={`${(packSoc / 100 * 4000 / 1000).toFixed(1)} kWh avail.`}
+              sub={`${(packSoc / 100 * 4).toFixed(1)} kWh`}
             />
             {spareSoc !== null && (
-              <SocGauge
-                socPercent={spareSoc}
-                label="Spare Pack"
-                sub="on trailer"
-              />
+              <SocGauge socPercent={spareSoc} label="Spare Pack" sub="on trailer" />
             )}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
               <MetricCard
-                label="Miles remaining"
-                value={milesRemaining.toFixed(1)}
+                label="Miles left"
+                value={milesLeft.toFixed(1)}
                 unit="mi"
-                sub={`of ${totalMiles} today`}
+                sub={`of ${totalMiles}`}
               />
               <MetricCard
                 label="Miles done"
@@ -210,28 +224,28 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Course map */}
-          <CourseMap
-            selectedDay={selectedDay}
-            currentLat={vehicle?.gpsLat}
-            currentLng={vehicle?.gpsLng}
-            milesCompleted={milesCompleted}
-          />
+          {/* Map — fills remaining space on desktop */}
+          <div className="min-h-[220px] xl:flex-1">
+            <CourseMap
+              selectedDay={selectedDay}
+              currentLat={vehicle?.gpsLat}
+              currentLng={vehicle?.gpsLng}
+              milesCompleted={milesCompleted}
+            />
+          </div>
         </div>
 
-        {/* Right column: detailed telemetry */}
-        <TelemetryGrid
-          vehicle={vehicle}
-          mppt={mppt}
-          liveWhPerMile={livWpm}
-          modelWhPerMileAtCurrentSpeed={modelWpm}
-          netWhPerMile={netWpm}
-        />
+        {/* Right column — telemetry, scrollable */}
+        <div className="overflow-y-auto mt-2 xl:mt-0">
+          <TelemetryGrid
+            vehicle={vehicle}
+            mppt={mppt}
+            liveWhPerMile={livWpm}
+            modelWhPerMileAtCurrentSpeed={modelWpm}
+            netWhPerMile={netWpm}
+          />
+        </div>
       </div>
-
-      <footer className="text-center text-xs text-slate-700 pb-2">
-        Polls every 2s · Physics model: Cd {0.20} A {1.35}m² η {0.72} Crr {0.008} m {300}kg
-      </footer>
     </div>
   )
 }

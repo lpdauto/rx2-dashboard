@@ -7,7 +7,7 @@ const CourseMapLeaflet = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="rounded-lg border border-white/10 bg-white/[0.04] flex items-center justify-center" style={{ height: 380 }}>
+      <div className="rounded-lg border border-white/10 bg-white/[0.04] flex items-center justify-center" style={{ height: 240 }}>
         <p className="text-sm text-slate-500">Loading map…</p>
       </div>
     ),

@@ -3,8 +3,7 @@ type Props = {
   value: string | number | null
   unit?: string
   sub?: string
-  color?: 'default' | 'green' | 'yellow' | 'orange' | 'red' | 'amber'
-  large?: boolean
+  color?: 'default' | 'green' | 'yellow' | 'amber' | 'orange' | 'red'
 }
 
 const colorMap = {
@@ -16,17 +15,17 @@ const colorMap = {
   red:     'text-red-400',
 }
 
-export function MetricCard({ label, value, unit, sub, color = 'default', large }: Props) {
-  const displayValue = value === null || value === undefined ? '—' : value
+export function MetricCard({ label, value, unit, sub, color = 'default' }: Props) {
+  const display = value === null || value === undefined ? '—' : value
 
   return (
-    <div className="flex flex-col rounded-lg border border-white/10 bg-white/[0.04] p-4">
-      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{label}</p>
-      <p className={`mt-1 font-black leading-none ${large ? 'text-5xl' : 'text-3xl'} ${colorMap[color]}`}>
-        {displayValue}
-        {unit && <span className="ml-1 text-base font-medium text-slate-400">{unit}</span>}
+    <div className="flex flex-col rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 leading-none">{label}</p>
+      <p className={`mt-1 text-2xl font-black leading-none ${colorMap[color]}`}>
+        {display}
+        {unit && display !== '—' && <span className="ml-0.5 text-xs font-medium text-slate-400"> {unit}</span>}
       </p>
-      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
+      {sub && <p className="mt-0.5 text-[10px] text-slate-500 leading-none">{sub}</p>}
     </div>
   )
 }

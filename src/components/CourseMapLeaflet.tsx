@@ -124,13 +124,13 @@ export function CourseMapLeaflet({ selectedDay, currentLat, currentLng, milesCom
       {/* Map */}
       <MapContainer
         bounds={initialBounds}
-        style={{ height: 340, width: '100%', background: '#0f172a' }}
+        style={{ height: 240, width: '100%', background: '#f8fafc' }}
         zoomControl={true}
         attributionControl={true}
       >
-        {/* Dark tile layer from CartoDB */}
+        {/* Light tile layer from CartoDB Positron */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           subdomains="abcd"
           maxZoom={19}
