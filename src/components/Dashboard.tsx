@@ -192,43 +192,59 @@ export function Dashboard() {
       </div>
 
       {/* ── Main area ─────────────────────────────────────────────── */}
-      {/* On desktop: two columns, each independently scrollable     */}
-      {/* On mobile: single column, natural flow                     */}
-      <div className="flex-1 grid gap-2 px-3 pb-3 pt-2 overflow-hidden xl:grid-cols-[1fr_300px]">
+      {/* Desktop: left content | right telemetry (wider)           */}
+      {/* Mobile: single column natural scroll                      */}
+      <div className="flex-1 grid gap-2 px-3 pb-3 pt-2 overflow-hidden xl:grid-cols-[minmax(0,1fr)_420px]">
 
-        {/* Left column */}
-        <div className="flex flex-col gap-2 overflow-y-auto xl:overflow-hidden xl:grid xl:grid-rows-[auto_auto_1fr] xl:gap-2">
+        {/* ── Left column ──────────────────────────────────────── */}
+        <div className="flex flex-col gap-2 overflow-y-auto xl:overflow-hidden xl:grid xl:grid-rows-[auto_auto_1fr]">
 
           {/* Strategy */}
           <StrategyPanel strategy={strategy} />
 
-          {/* SoC row + progress */}
-          <div className={`grid gap-2 ${spareSoc !== null ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          {/* Compact SoC + progress bar — single row on desktop */}
+          <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5">
+            {/* Drive pack */}
             <SocGauge
               socPercent={packSoc}
               label="Drive Pack"
               sub={`${(packSoc / 100 * 4).toFixed(1)} kWh`}
+              mini
             />
+
+            {/* Divider */}
+            <div className="h-8 w-px bg-white/10 flex-none" />
+
+            {/* Spare pack (if available) */}
             {spareSoc !== null && (
-              <SocGauge socPercent={spareSoc} label="Spare Pack" sub="on trailer" />
+              <>
+                <SocGauge socPercent={spareSoc} label="Spare Pack" sub="on trailer" mini />
+                <div className="h-8 w-px bg-white/10 flex-none" />
+              </>
             )}
-            <div className="flex flex-col gap-1.5">
-              <MetricCard
-                label="Miles left"
-                value={milesLeft.toFixed(1)}
-                unit="mi"
-                sub={`of ${totalMiles}`}
-              />
-              <MetricCard
-                label="Miles done"
-                value={milesCompleted.toFixed(1)}
-                unit="mi"
-              />
+
+            {/* Progress bar + miles */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline justify-between gap-2 mb-1">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-500">Day {selectedDay} Progress</span>
+                <span className="text-[10px] text-slate-400">{milesCompleted.toFixed(1)} / {totalMiles} mi</span>
+              </div>
+              <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-amber-400 transition-all duration-500"
+                  style={{ width: `${Math.min(100, (milesCompleted / totalMiles) * 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[9px] text-slate-600">0</span>
+                <span className="text-xs font-bold text-white">{milesLeft.toFixed(1)} mi left</span>
+                <span className="text-[9px] text-slate-600">{totalMiles}</span>
+              </div>
             </div>
           </div>
 
-          {/* Map — fills remaining space on desktop */}
-          <div className="min-h-[220px] xl:flex-1">
+          {/* Map — fills remaining vertical space */}
+          <div className="min-h-[200px] xl:min-h-0 xl:flex-1">
             <CourseMap
               selectedDay={selectedDay}
               currentLat={vehicle?.gpsLat}
@@ -238,7 +254,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Right column — telemetry, scrollable */}
+        {/* ── Right column — telemetry, wider, independently scrollable */}
         <div className="overflow-y-auto mt-2 xl:mt-0">
           <TelemetryGrid
             vehicle={vehicle}
