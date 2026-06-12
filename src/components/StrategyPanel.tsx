@@ -87,10 +87,10 @@ export function StrategyPanel({ strategy: s }: { strategy: StrategyResult }) {
 
 function Stat({ label, value, sub, color = 'text-white' }: { label: string; value: string; sub?: string; color?: string }) {
   return (
-    <div className="rounded border border-white/10 bg-white/[0.04] px-2 py-1.5">
-      <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-500 leading-none">{label}</p>
-      <p className={`mt-0.5 text-base font-bold leading-none ${color}`}>{value}</p>
-      {sub && <p className="text-[9px] text-slate-600 leading-none mt-0.5">{sub}</p>}
+    <div className="rounded border border-white/10 bg-white/[0.04] px-2.5 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 leading-none">{label}</p>
+      <p className={`mt-1 text-lg font-bold leading-none ${color}`}>{value}</p>
+      {sub && <p className="text-[10px] text-slate-600 leading-none mt-0.5">{sub}</p>}
     </div>
   )
 }

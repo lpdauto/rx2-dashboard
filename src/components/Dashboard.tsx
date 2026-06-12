@@ -194,7 +194,7 @@ export function Dashboard() {
       {/* ── Main area ─────────────────────────────────────────────── */}
       {/* Desktop: left content | right telemetry (wider)           */}
       {/* Mobile: single column natural scroll                      */}
-      <div className="flex-1 grid gap-2 px-3 pb-3 pt-2 overflow-hidden xl:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="flex-1 grid gap-2 px-3 pb-3 pt-2 overflow-hidden xl:grid-cols-[minmax(0,1fr)_460px]">
 
         {/* ── Left column ──────────────────────────────────────── */}
         <div className="flex flex-col gap-2 overflow-y-auto xl:overflow-hidden xl:grid xl:grid-rows-[auto_auto_1fr]">
@@ -226,8 +226,8 @@ export function Dashboard() {
             {/* Progress bar + miles */}
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between gap-2 mb-1">
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-500">Day {selectedDay} Progress</span>
-                <span className="text-[10px] text-slate-400">{milesCompleted.toFixed(1)} / {totalMiles} mi</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Day {selectedDay} Progress</span>
+                <span className="text-xs text-slate-400">{milesCompleted.toFixed(1)} / {totalMiles} mi</span>
               </div>
               <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                 <div
@@ -236,9 +236,9 @@ export function Dashboard() {
                 />
               </div>
               <div className="flex justify-between mt-1">
-                <span className="text-[9px] text-slate-600">0</span>
+                <span className="text-[10px] text-slate-600">0</span>
                 <span className="text-xs font-bold text-white">{milesLeft.toFixed(1)} mi left</span>
-                <span className="text-[9px] text-slate-600">{totalMiles}</span>
+                <span className="text-[10px] text-slate-600">{totalMiles}</span>
               </div>
             </div>
           </div>

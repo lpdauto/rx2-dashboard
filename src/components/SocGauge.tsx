@@ -42,8 +42,8 @@ export function SocGauge({ socPercent, label, sub, mini }: Props) {
           </div>
         </div>
         <div className="min-w-0">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-500 leading-none">{label}</p>
-          <p className="text-[10px] text-slate-400 leading-none mt-0.5">{sub}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 leading-none">{label}</p>
+          <p className="text-xs text-slate-400 leading-none mt-0.5">{sub}</p>
         </div>
       </div>
     )
@@ -64,7 +64,7 @@ export function SocGauge({ socPercent, label, sub, mini }: Props) {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-xl font-black text-white leading-none">{Math.round(clamped)}</span>
-          <span className="text-[9px] text-slate-400">%</span>
+          <span className="text-[10px] text-slate-400">%</span>
         </div>
       </div>
       {sub && <p className="mt-1 text-[10px] text-slate-500 text-center leading-tight">{sub}</p>}

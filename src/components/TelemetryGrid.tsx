@@ -7,21 +7,21 @@ const DISCONNECTED_MS = 30_000
 
 function NodeStatus({ ageMs }: { ageMs: number | null }) {
   if (ageMs === null) {
-    return <span className="text-[9px] font-semibold text-slate-600 uppercase tracking-wider">No data</span>
+    return <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider">No data</span>
   }
   const secs = Math.round(ageMs / 1000)
   if (ageMs < DISCONNECTED_MS) {
     return (
       <span className="flex items-center gap-1">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="text-[9px] font-semibold text-emerald-400">{secs}s ago</span>
+        <span className="text-[10px] font-semibold text-emerald-400">{secs}s ago</span>
       </span>
     )
   }
   return (
     <span className="flex items-center gap-1">
       <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-      <span className="text-[9px] font-semibold text-red-400">Disconnected · {secs}s</span>
+      <span className="text-[10px] font-semibold text-red-400">Disconnected · {secs}s</span>
     </span>
   )
 }
@@ -78,8 +78,8 @@ export function TelemetryGrid({ vehicle, mppt, liveWhPerMile, modelWhPerMileAtCu
       {/* 3. GPS — always shown, critical for position/navigation */}
       <Section title="GPS" status={
         vehicle?.gpsLat && vehicle?.gpsLng
-          ? <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /><span className="text-[9px] font-semibold text-emerald-400">Fix</span></span>
-          : <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /><span className="text-[9px] font-semibold text-red-400">No fix</span></span>
+          ? <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /><span className="text-[10px] font-semibold text-emerald-400">Fix</span></span>
+          : <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" /><span className="text-[10px] font-semibold text-red-400">No fix</span></span>
       }>
         <Row label="Latitude"   value={fmt(vehicle?.gpsLat, 5)} />
         <Row label="Longitude"  value={fmt(vehicle?.gpsLng, 5)} />
@@ -125,11 +125,11 @@ function fmt(value: number | string | null | undefined, decimals?: number): stri
 function Section({ title, children, status }: { title: string; children: React.ReactNode; status?: React.ReactNode }) {
   return (
     <div className="rounded border border-white/10 bg-white/[0.04] overflow-hidden">
-      <div className="border-b border-white/10 bg-white/[0.03] px-2.5 py-1 flex items-center justify-between gap-2">
-        <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">{title}</p>
+      <div className="border-b border-white/10 bg-white/[0.03] px-3 py-1.5 flex items-center justify-between gap-2">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{title}</p>
         {status}
       </div>
-      <div className="grid grid-cols-3 divide-x divide-y divide-white/[0.05]">{children}</div>
+      <div className="grid grid-cols-2 divide-x divide-y divide-white/[0.05]">{children}</div>
     </div>
   )
 }
@@ -145,12 +145,12 @@ function Row({ label, value, unit, sub, warn, crit, highlight }: {
     : 'text-white'
 
   return (
-    <div className="px-2 py-1.5">
-      <p className="text-[9px] font-medium uppercase tracking-wider text-slate-500 leading-none">{label}</p>
-      <p className={`mt-0.5 text-xs font-semibold leading-none ${textColor}`}>
-        {value ?? '—'}{unit && value ? <span className="text-[9px] text-slate-500"> {unit}</span> : null}
+    <div className="px-3 py-2">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500 leading-none">{label}</p>
+      <p className={`mt-1 text-sm font-semibold leading-none ${textColor}`}>
+        {value ?? '—'}{unit && value ? <span className="text-[10px] text-slate-500"> {unit}</span> : null}
       </p>
-      {sub && <p className="text-[9px] text-slate-600 leading-none mt-0.5">{sub}</p>}
+      {sub && <p className="text-[10px] text-slate-600 leading-none mt-0.5">{sub}</p>}
     </div>
   )
 }

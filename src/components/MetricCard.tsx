@@ -20,12 +20,12 @@ export function MetricCard({ label, value, unit, sub, color = 'default' }: Props
 
   return (
     <div className="flex flex-col rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2.5">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 leading-none">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 leading-none">{label}</p>
       <p className={`mt-1 text-2xl font-black leading-none ${colorMap[color]}`}>
         {display}
         {unit && display !== '—' && <span className="ml-0.5 text-xs font-medium text-slate-400"> {unit}</span>}
       </p>
-      {sub && <p className="mt-0.5 text-[10px] text-slate-500 leading-none">{sub}</p>}
+      {sub && <p className="mt-1 text-[11px] text-slate-500 leading-none">{sub}</p>}
     </div>
   )
 }
